@@ -9,11 +9,13 @@ def main(output_prefix, number_records, genomic, barcode):
         raise ValueError('cannot extract from zipped files, please unzip first')
     args = 'head -n {number_records} {file} > {prefix}_{record_type}.fastq'
     number_records = str(int(number_records) * 4)
-    call(args.format(number_records=number_records, file=genomic, prefix=output_prefix, record_type='genomic'))
+    call(args.format(number_records=number_records, file=genomic, prefix=output_prefix, record_type='genomic'),
+         shell=True)
     if barcode:
         if barcode.endswith('.gz'):
             raise ValueError('cannot extract from zipped files, please unzip first')
-        call(args.format(number_records=number_records, file=barcode, prefix=output_prefix, record_type='barcode'))
+        call(args.format(number_records=number_records, file=barcode, prefix=output_prefix, record_type='barcode'),
+             shell=True)
 
 
 if __name__ == "__main__":
