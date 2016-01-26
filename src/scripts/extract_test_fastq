@@ -1,0 +1,24 @@
+#!/usr/local/bin/python3
+
+import sys
+from subprocess import call
+
+
+def main(output_prefix, number_records, genomic, barcode):
+    if any(f.endswith('.gz') for f in [genomic, barcode]):
+        raise ValueError('cannot extract from zipped files, please unzip first')
+    args = ['head -n {number_records} {file} > {prefix}_{record_type}.fastq']
+    call(args.format(number_records=number_records, file=genomic, prefix=output_prefix, record_type='genomic'))
+    if barcode:
+        call(args.format(number_records=number_records, file=barcode, prefix=output_prefix, record_type='barcode'))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 4:
+        _, output_prefix, number_records, genomic = sys.argv
+        barcode = None
+    elif len(sys.argv) == 5:
+        _, output_prefix, number_records, genomic, barcode = sys.argv
+    else:
+        print('usage: extract_test_fastq output_prefix number_records genomic barcode[optional]')
+    main(output_prefix, number_records, genomic, barcode)

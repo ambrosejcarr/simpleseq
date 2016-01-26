@@ -14,6 +14,7 @@ setup(name='simpleseq',
           'numpy>=1.10.0',
           'pandas>=0.16.0',
           'matplotlib>=1.5.0',
-          'seaborn'],
-      scripts=['src/scripts/merge_annotations.py']
+          'seaborn',
+          'regex'],
+      scripts=['src/scripts/merge_annotations']
       )
