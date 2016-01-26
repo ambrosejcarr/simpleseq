@@ -5,11 +5,14 @@ from subprocess import call
 
 
 def main(output_prefix, number_records, genomic, barcode):
-    if any(f.endswith('.gz') for f in [genomic, barcode]):
+    if genomic.endswith('.gz'):
         raise ValueError('cannot extract from zipped files, please unzip first')
     args = ['head -n {number_records} {file} > {prefix}_{record_type}.fastq']
+    number_records = str(int(number_records) * 4)
     call(args.format(number_records=number_records, file=genomic, prefix=output_prefix, record_type='genomic'))
     if barcode:
+        if barcode.endswith('.gz'):
+            raise ValueError('cannot extract from zipped files, please unzip first')
         call(args.format(number_records=number_records, file=barcode, prefix=output_prefix, record_type='barcode'))
 
 
