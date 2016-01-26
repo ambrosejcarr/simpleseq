@@ -21,4 +21,5 @@ if __name__ == "__main__":
         _, output_prefix, number_records, genomic, barcode = sys.argv
     else:
         print('usage: extract_test_fastq output_prefix number_records genomic barcode[optional]')
+        sys.exit(2)
     main(output_prefix, number_records, genomic, barcode)
