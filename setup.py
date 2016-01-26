@@ -16,5 +16,6 @@ setup(name='simpleseq',
           'matplotlib>=1.5.0',
           'seaborn',
           'regex'],
-      scripts=['src/scripts/merge_annotations']
+      scripts=['src/scripts/merge_annotations',
+               'src/scripts/extract_test_fastq']
       )
