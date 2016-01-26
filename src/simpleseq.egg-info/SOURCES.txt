@@ -1,0 +1,8 @@
+src/scripts/merge_annotations.py
+src/simpleseq/__init__.py
+src/simpleseq/sam.py
+src/simpleseq.egg-info/PKG-INFO
+src/simpleseq.egg-info/SOURCES.txt
+src/simpleseq.egg-info/dependency_links.txt
+src/simpleseq.egg-info/requires.txt
+src/simpleseq.egg-info/top_level.txt
