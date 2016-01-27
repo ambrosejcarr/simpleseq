@@ -10,10 +10,11 @@ matplotlib.rc('font', **{'family': 'serif',
                          'monospace': ['Computer Modern Typewriter']
                          })
 
-matplotlib.rc('figure', **{'figsize': (4, 4)})
+matplotlib.rc('figure', **{'figsize': (4, 4),
+                           'dpi': 150})
 
-matplotlib.rc('patches', **{'facecolor': 'royalblue',
-                            'edgecolor': 'none'})
+matplotlib.rc('patch', **{'facecolor': 'royalblue',
+                          'edgecolor': 'none'})
 
 matplotlib.rc('lines', **{'color': 'royalblue'})
 
