@@ -17,5 +17,6 @@ setup(name='simpleseq',
           'seaborn',
           'regex'],
       scripts=['src/scripts/merge_annotations',
-               'src/scripts/extract_test_fastq']
+               'src/scripts/extract_test_fastq',
+               'src/scripts/align']
       )
