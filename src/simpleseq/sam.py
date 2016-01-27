@@ -216,7 +216,7 @@ class MultiAlignment:
         return '<MultiAlignment: {0}>'.format(str(self))
 
     def __str__(self) -> str:
-        return b'\t'.join(self._data).decode()
+        return b'\n'.join(b'\t'.join(r) for r in self._data).decode()
 
     def __bytes__(self) -> bytes:
         return b'\n'.join(b'\t'.join(r) for r in self._data)
