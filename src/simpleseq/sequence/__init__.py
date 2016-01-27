@@ -1,4 +1,5 @@
 from . import fastq
+from . import fasta
 from . import merge_functions
 
 _revcomp = {b'A': b'T', b'T': b'A', b'C': b'G', b'G': b'C', b'N': b'N',
