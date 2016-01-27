@@ -487,7 +487,9 @@ def _download_basespace_content(item_data, access_token, dest_path, index):
     response = requests.get('https://api.basespace.illumina.com/v1pre3/files/' +
                             item['Id'] + '/content?access_token=' +
                             access_token, stream=True)
-    path = dest_path + '/' + item['Path']
+    if not dest_path.endswith('/'):
+        dest_path += '/'
+    path = dest_path + item['Path']
     with open(path, "wb") as fd:
         for chunk in response.iter_content(104857600):  # chunksize = 100MB
             fd.write(chunk)
