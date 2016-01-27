@@ -8,8 +8,10 @@ def parse_args():
     p = argparse.ArgumentParser(description='merge annotations from drop-seq and in-drop')
     p.add_argument('platform', choices=['in_drop', 'drop_seq', 'mars1_seq', 'mars2_seq'],
                    help='which platform are you merging annotations from?')
-    p.add_argument('-g', '--genomic-fastq', nargs='+', metavar='G', help='fastq file(s) containing genomic information')
-    p.add_argument('-b', '--barcode-fastq', nargs='?', metavar='B', help='fastq file(s) containing barcode information')
+    p.add_argument('-g', '--genomic-fastq', nargs='+', metavar='G',
+                   help='fastq file(s) containing genomic information')
+    p.add_argument('-b', '--barcode-fastq', nargs='?', metavar='B',
+                   help='fastq file(s) containing barcode information')
     p.add_argument('-o', '--output-file', metavar='O', help='name for output file')
     return p.parse_args()
 
