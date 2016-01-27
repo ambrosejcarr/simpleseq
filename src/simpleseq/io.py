@@ -489,6 +489,8 @@ def _download_basespace_content(item_data, access_token, dest_path, index):
                             access_token, stream=True)
     if not dest_path.endswith('/'):
         dest_path += '/'
+    if not os.path.isdir(dest_path):
+        os.makedirs(dest_path, exist_ok=True)
     path = dest_path + item['Path']
     with open(path, "wb") as fd:
         for chunk in response.iter_content(104857600):  # chunksize = 100MB
