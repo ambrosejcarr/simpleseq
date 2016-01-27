@@ -4,8 +4,8 @@ class DNA3Bit:
     Compact encoding scheme for sequence data.
     """
 
-    _str2bindict = {b'A': 0b100, b'C': 0b110, b'G': 0b101, b'T': 0b011, b'N': 0b111,
-                    b'a': 0b100, b'c': 0b110, b'g': 0b101, b't': 0b011, b'n': 0b111}
+    _str2bindict = {65: 0b100, 67: 0b110, 71: 0b101, 84: 0b011, 78: 0b111,
+                    97: 0b100, 99: 0b110, 103: 0b101, 116: 0b011, 110: 0b111}
     _bin2strdict = {0b100: b'A', 0b110: b'C', 0b101: b'G', 0b011: b'T', 0b111: b'N'}
     bin_nums = [0b100, 0b110, 0b101, 0b011]
 
