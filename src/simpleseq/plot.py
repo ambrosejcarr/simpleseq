@@ -1,5 +1,8 @@
 import matplotlib
-import seaborn as sns
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import seaborn as sns
 
 # set a bunch of defaults
 sns.set_style('ticks')
