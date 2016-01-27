@@ -15,8 +15,12 @@ setup(name='simpleseq',
           'pandas>=0.16.0',
           'matplotlib>=1.5.0',
           'seaborn',
-          'regex'],
+          'regex',
+          'boto3',
+          'requests'],
       scripts=['src/scripts/merge_annotations',
                'src/scripts/extract_test_fastq',
-               'src/scripts/align']
+               'src/scripts/align',
+               'src/scripts/align_basespace',
+               'src/scripts/align_s3']
       )

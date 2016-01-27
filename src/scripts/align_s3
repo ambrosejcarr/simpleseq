@@ -1,0 +1,39 @@
+#!/usr/local/bin/python3
+
+import argparse
+import simpleseq
+import multiprocessing
+from glob import glob
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description='merge annotations from drop-seq and in-drop')
+    p.add_argument('platform', choices=['in_drop', 'drop_seq', 'mars1_seq', 'mars2_seq'],
+                   help='which platform are you merging annotations from?')
+    p.add_argument('-s', '--s3-folder', metavar='S',
+                   help='name of s3 folder containing fastq files to be downloaded')
+    p.add_argument('-i', '--index', metavar='I', help='genome index folder')
+    p.add_argument('-o', '--output-directory', metavar='O',
+                   help='name of output directory')
+    return p.parse_args()
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    if not args.output_directory.endswith('/'):
+        args.output_directory += '/'
+    bucket, key_prefix = simpleseq.io.S3.split_link(args.s3_folder)
+    cut_dirs = key_prefix.count('/')
+    simpleseq.io.S3.download_files(
+            bucket=bucket, key_prefix=key_prefix, output_prefix=args.output_directory,
+            cut_dirs=cut_dirs)
+    barcode = glob('{}*R1*'.format(args.output_directory))
+    genomic = glob('{}*R2*'.format(args.output_directory))
+    merge_function = getattr(simpleseq.sequence.merge_functions, args.platform)
+    output_file = args.output_directory + 'merged.fastq'
+    merged = simpleseq.sequence.fastq.merge_fastq(
+        merge_function=merge_function, fout=output_file, genomic=genomic,
+        barcode=barcode)
+    n_threads = multiprocessing.cpu_count() - 1
+    simpleseq.sam.STAR.align(fastq_file=merged, index=args.index, n_threads=n_threads,
+                             temp_dir=args.output_directory)

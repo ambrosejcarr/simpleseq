@@ -1,10 +1,6 @@
-import fileinput
 import os
-import contextlib
 import gzip
-import bz2
 from functools import lru_cache
-from itertools import islice
 from collections.abc import Iterable, Mapping
 import numpy as np
 
@@ -88,8 +84,7 @@ class FastqRecord:
 
     def add_annotation(self, values: Iterable) -> None:
         """prepends a list of annotations to the name field of self.name"""
-        self._data[0] = self.name[:-1] + b';' + b':'.join(values) + b'\n'
-
+        self._data[0] = b'@' + b':'.join(values) + b';' + self.name[1:]
 
     def add_metadata(self, values: Mapping) -> None:
         """appends a list of metadata fields to the name field of self.name"""
