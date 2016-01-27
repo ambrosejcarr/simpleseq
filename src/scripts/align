@@ -25,6 +25,6 @@ if __name__ == '__main__':
         merge_function=merge_function, fout=output_file, genomic=args.genomic_fastq,
         barcode=args.barcode_fastq)
     n_threads = multiprocessing.cpu_count() - 1
-    simpleseq.sam.STAR.align(fastq_file=args.merged_fastq, index=args.index, n_threads=n_threads,
+    simpleseq.sam.STAR.align(fastq_file=merged, index=args.index, n_threads=n_threads,
                              temp_dir=args.output_directory)
 
