@@ -44,7 +44,10 @@ class SamAnnotation:
 
     @property
     def n_poly_t(self) -> int:
-        return int(self._fields[3])
+        try:
+            return int(self._fields[3])
+        except ValueError:  # empty field denotes zero
+            return 0
 
     # @property
     # def barcode_quality(self) -> int:
