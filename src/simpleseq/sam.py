@@ -483,14 +483,15 @@ class SamReader(simpleseq.reader.Reader):
 
         for ma in self.iter_multialignments():
             anno = ma.annotations
-            unmapped_data['cell'][anno.encoded_cell] += 1
-            unmapped_data['rmt'][anno.encoded_rmt] += 1
-            unmapped_data['pool'][anno.encoded_pool] += 1
-            unmapped_data['average_quality'][ma.average_quality] += 1
-            mapped_data['cell'][anno.encoded_cell] += 1
-            mapped_data['rmt'][anno.encoded_rmt] += 1
-            mapped_data['pool'][anno.encoded_pool] += 1
-            mapped_data['average_quality'][ma.average_quality] += 1
+            unmapped_data['cell'][anno.cell] += 1
+            unmapped_data['rmt'][anno.rmt] += 1
+            unmapped_data['pool'][anno.pool] += 1
+            aq = ma.average_quality
+            unmapped_data['average_quality'][aq] += 1
+            mapped_data['cell'][anno.cell] += 1
+            mapped_data['rmt'][anno.rmt] += 1
+            mapped_data['pool'][anno.pool] += 1
+            mapped_data['average_quality'][aq] += 1
 
             # separate unique and multi-positions
             if ma.is_uniquely_mapped:
