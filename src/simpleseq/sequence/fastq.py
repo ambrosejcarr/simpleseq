@@ -154,7 +154,7 @@ def merge_fastq(merge_function, fout, genomic, barcode=None):
     """
     directory, filename = os.path.split(fout)
     if not os.path.isdir(directory):
-        os.makedirs(fout, exist_ok=True)
+        os.makedirs(directory, exist_ok=True)
     genomic = FastqReader(genomic)
     barcode = FastqReader(barcode)
     with open(fout, 'wb') as f:
