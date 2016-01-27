@@ -1,7 +1,11 @@
 import fileinput
+import os
+import contextlib
+import gzip
+import bz2
+from functools import lru_cache
 from itertools import islice
 from collections.abc import Iterable, Mapping
-import seqc_clean
 import numpy as np
 
 
@@ -10,7 +14,7 @@ class FastqRecord:
     __slots__ = ['_data']
 
     def __init__(self, record: [bytes, bytes, bytes, bytes]):
-        self._data = record
+        self._data = list(record)
 
     @property
     def name(self) -> bytes:
@@ -97,13 +101,49 @@ class FastqRecord:
             .astype(int) - 33
 
 
-class FastqReader(seqc_clean.file_io.Reader):
+class FastqReader:
+    """simple Reader Class, designed for inheritance across data types"""
+
+    def __init__(self, files_):
+
+        if isinstance(files_, list):
+            self._files = files_
+        elif isinstance(files_, str):
+            self._files = [files_]
+
+    @property
+    def filenames(self):
+        return self._files
+
+    @lru_cache(maxsize=1)
+    def __len__(self):
+        """
+        return the length of the Reader object. This depends on the implementation of
+        self.__iter__(); it does not necessarily represent the length of the file in
+        lines.
+        """
+        return sum(1 for _ in self)
+
+    @staticmethod
+    def record_grouper(iterable):
+        args = [iter(iterable)] * 4
+        return zip(*args)
 
     def __iter__(self):
-        hook = fileinput.hook_compressed
-        with fileinput.input(self._files, openhook=hook, mode='rb') as f:
-            while True:
-                yield FastqRecord(list(islice(f, 4)))
+        for f in self._files:
+            if f.endswith('.gz'):
+                file_input = gzip.open(f, 'rb')
+            elif f.endswith('.bz2'):
+                file_input = gzip.open(f, 'rb')
+            else:
+                file_input = open(f, 'rb')
+            for record in self.record_grouper(file_input):
+                yield FastqRecord(record)
+
+    @property
+    def size(self) -> int:
+        """return the colective size of all files being read in bytes"""
+        return sum(os.stat(f).st_size for f in self._files)
 
 
 def merge_fastq(merge_function, fout, genomic, barcode=None):

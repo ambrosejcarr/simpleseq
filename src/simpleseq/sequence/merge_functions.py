@@ -1,5 +1,4 @@
 #!/usr/local/bin/python3
-
 import regex as re
 
 
@@ -13,13 +12,15 @@ def in_drop(g, b):
         cell = cell1 + cell2
     except AttributeError:
         cell, rmt, poly_t = b'', b'', b''
-    return g.add_annotation((b'', cell, rmt, poly_t))
+    g.add_annotation((b'', cell, rmt, poly_t))
+    return g
 
 
 def drop_seq(g, b):
     cell = b.sequence[:12]
     rmt = b.sequence[12:20]
-    return g.add_annotation((b'', cell, rmt, b''))
+    g.add_annotation((b'', cell, rmt, b''))
+    return g
 
 
 def mars1_seq(g, b=None):
