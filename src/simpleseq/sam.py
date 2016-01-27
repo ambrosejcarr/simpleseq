@@ -6,63 +6,450 @@ import gzip
 import bz2
 from subprocess import Popen, PIPE, call, check_output, CalledProcessError
 from shutil import rmtree, copyfileobj
-from collections import defaultdict
+import numpy as np
+import simpleseq
+import fileinput
+from itertools import islice
 
 
-# download links for supported genomes on GEO
-_download_links = dict(hg38={
-    'genome': ('ftp://ftp.ensembl.org/pub/release-80/fasta/homo_sapiens/dna/'
-               'Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz'),
-    'gtf': ('ftp://ftp.ensembl.org/pub/release-80/gtf/homo_sapiens/'
-            'Homo_sapiens.GRCh38.80.gtf.gz'),
-    'cdna': [('ftp://ftp.ensembl.org/pub/release-80/fasta/homo_sapiens/'
-              'ncrna/Homo_sapiens.GRCh38.ncrna.fa.gz'),
-             ('ftp://ftp.ensembl.org/pub/release-80/fasta/homo_sapiens/cdna/'
-              'Homo_sapiens.GRCh38.cdna.all.fa.gz')]
-}, mm38={
-    'genome': ('ftp://ftp.ensembl.org/pub/release-76/fasta/mus_musculus/dna/'
-               'Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'),
-    'gtf': ('ftp://ftp.ensembl.org/pub/release-76/gtf/mus_musculus/'
-            'Mus_musculus.GRCm38.76.gtf.gz'),
-    'cdna': [('ftp://ftp.ensembl.org/pub/release-76/fasta/mus_musculus/ncrna/'
-              'Mus_musculus.GRCm38.ncrna.fa.gz'),
-             ('ftp://ftp.ensembl.org/pub/release-76/fasta/mus_musculus/cdna/'
-              'Mus_musculus.GRCm38.cdna.all.fa.gz')]
-}, ci2={
-    'genome': ('ftp://ftp.ensembl.org/pub/release-81/fasta/ciona_intestinalis/dna/'
-               'Ciona_intestinalis.KH.dna.toplevel.fa.gz'),
-    'gtf': ('ftp://ftp.ensembl.org/pub/release-81/gtf/ciona_intestinalis/'
-            'Ciona_intestinalis.KH.81.gtf.gz'),
-    'cdna': [('ftp://ftp.ensembl.org/pub/release-81/fasta/ciona_intestinalis/cdna/'
-              'Ciona_intestinalis.KH.cdna.all.fa.gz')]
-}, cs2={
-    'genome': ('ftp://ftp.ensembl.org/pub/release-81/fasta/ciona_savignyi/dna/'
-               'Ciona_savignyi.CSAV2.0.dna.toplevel.fa.gz'),
-    'gtf': ('ftp://ftp.ensembl.org/pub/release-81/gtf/ciona_savignyi/'
-            'Ciona_savignyi.CSAV2.0.81.gtf.gz'),
-    'cdna': [('ftp://ftp.ensembl.org/pub/release-81/fasta/ciona_savignyi/cdna/'
-              'Ciona_savignyi.CSAV2.0.cdna.all.fa.gz')]
-})
+class SamAnnotation:
+    """Container for annotations added to fastq records by simpleseq.fastq.merge()"""
+
+    __slots__ = ['_fields']
+
+    def __init__(self, name_field):
+        fields, *name = name_field.split(b';')
+        self._fields = fields.split(b':') + b';'.join(name)
+
+    def __repr__(self) -> str:
+        return '<SamAnnotation: {0}>'.format(str(self))
+
+    def __str__(self) -> str:
+        return bytes(self).decode()
+
+    def __bytes__(self) -> bytes:
+        return b':'.join(self._fields)[:-1] + b';' + self._fields[-1]
+
+    @property
+    def cell(self) -> bytes:
+        return self._fields[0]
+
+    @property
+    def rmt(self) -> bytes:
+        return self._fields[1]
+
+    @property
+    def n_poly_t(self) -> int:
+        return int(self._fields[2])
+
+    @property
+    def barcode_quality(self) -> int:
+        return int(self._fields[3])
+
+    @property
+    def qname(self) -> bytes:
+        return self._fields[4]
+
+    @property
+    def encoded_cell(self) -> int:
+        return simpleseq.encodings.DNA3Bit.encode(self._fields[0])
+
+    @property
+    def encoded_rmt(self) -> int:
+        return simpleseq.encodings.DNA3Bit.encode(self._fields[1])
+
+    def nearest_TTS(self, annotation):
+        raise NotImplementedError  # todo implement
 
 
-# define expected file names: efn[organism][filetype] = [names]  (list)
-def _define_file_names(download_links):
-    file_names = defaultdict(dict)
-    for organism, file_types in download_links.items():
-        for file_type, link in file_types.items():
-            if isinstance(link, list):  # deal with lists of cDNA files
-                file_name = [l.split('/')[-1] for l in link]
+class SamRecord:
+    """Record object for iterating over samfiles"""
+
+    __slots__ = ['_data']
+
+    def __init__(self, record: bytes):
+        self._data = record.split(b'\t')
+
+    def __repr__(self) -> str:
+        return '<SamRecord: {0}>'.format(str(self))
+
+    def __str__(self) -> str:
+        return b'\t'.join(self._data).decode()
+
+    def __bytes__(self) -> bytes:
+        return b'\t'.join(self._data)
+
+    def __len__(self) -> int:
+        return len(self.seq)
+
+    @property
+    def qname(self) -> bytes:
+        return self._data[0]
+
+    @property
+    def flag(self) -> int:
+        return int(self._data[1])
+
+    @property
+    def rname(self) -> bytes:
+        return self._data[2]
+
+    @property
+    def pos(self) -> int:
+        return int(self._data[3])
+
+    @property
+    def mapq(self) -> int:
+        return int(self._data[4])
+
+    @property
+    def cigar(self) -> bytes:
+        return self._data[5]
+
+    @property
+    def rnext(self) -> bytes:
+        return self._data[6]
+
+    @property
+    def pnext(self) -> int:
+        return int(self._data[7])
+
+    @property
+    def tlen(self) -> int:
+        return int(self._data[8])
+
+    @property
+    def seq(self) -> bytes:
+        return self._data[9]
+
+    @property
+    def qual(self) -> bytes:
+        return self._data[10]
+
+    @property
+    def optional_fields(self) -> dict:
+        flags_ = {}
+        for f in self._data[11:]:  # are all optional fields
+            k, type_, v = f.split(b':')
+            if type_ == b'i':
+                flags_[k] = int(v)
             else:
-                file_name = link.split('/')[-1]
-            file_names[organism][file_type] = file_name
-    return dict(file_names)
+                flags_[k] = v
+        return flags_
 
-_file_names = _define_file_names(_download_links)
+    @property
+    def strand(self) -> bytes:
+        return b'-' if self.flag & 16 else b'+'
+
+    @property
+    def annotations(self) -> SamAnnotation:
+        return SamAnnotation(self.qname)
+
+    @property
+    def is_mapped(self) -> bool:
+        return False if self.flag & 4 else True
+
+    @property
+    def is_unmapped(self) -> bool:
+        return True if self.flag & 4 else False
+
+    @property
+    def is_multimapped(self) -> bool:
+        return True if self.optional_fields['NH'] > 1 and self.is_mapped else False
+
+    @property
+    def is_uniquely_mapped(self) -> bool:
+        return True if self.optional_fields['NH'] == 1 and self.is_mapped else False
+
+    @property
+    def average_quality(self) -> int:
+        """"""
+        return np.mean(np.frombuffer(self.qual, dtype=np.int8, count=len(self)))\
+            .astype(int) - 33
+
+    @property
+    def data(self) -> [bytes]:
+        return self._data
+
+    @property
+    def dust_score(self) -> int:
+        """"""  # todo
+        counts = {}
+        for i in range(len(self.seq) - 2):
+            kmer = self.seq[i:i + 3]
+            counts[kmer] = counts.get(kmer, 0) + 1
+
+        # Calculate dust score
+        score = np.sum([i * (i - 1) / 2 for i in counts.values()]) / (len(self.seq) - 3)
+
+        # Scale score (Max score possible is no. of 3mers/2)
+        score = np.int8(score / ((len(self.seq) - 2) / 2) * 100)
+
+        return score
 
 
-def _check_type(obj, type_):
-    if not isinstance(obj, type_):
-        raise TypeError('%s must be of type %s' % (obj, type_))
+class MultiAlignment:
+
+    __slots__ = ['_data']
+
+    def __init__(self, records):
+        """initialized from a list of bytes records"""
+        self._data = [record.data for record in records]
+
+    @classmethod
+    def from_bytes(cls, records):
+        """initialized from a list of SamRecords objects"""
+        return cls(SamRecord(r) for r in records)
+
+    def __repr__(self) -> str:
+        return '<MultiAlignment: {0}>'.format(str(self))
+
+    def __str__(self) -> str:
+        return b'\t'.join(self._data).decode()
+
+    def __bytes__(self) -> bytes:
+        return b'\n'.join(b'\t'.join(r) for r in self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    @property
+    def qname(self) -> bytes:
+        return self._data[0][0]
+
+    @property
+    def flags(self) -> [int]:
+        return [int(r[1]) for r in self._data]
+
+    @property
+    def rnames(self) -> [bytes]:
+        return [r[2] for r in self._data]
+
+    @property
+    def positions(self) -> [int]:
+        return [int(r[3]) for r in self._data]
+
+    @property
+    def mapqs(self) -> [int]:
+        return [int(r[4]) for r in self._data]
+
+    @property
+    def cigars(self) -> [bytes]:
+        return [r[5] for r in self._data]
+
+    @property
+    def rnext(self) -> [bytes]:
+        return [r[6] for r in self._data]
+
+    @property
+    def pnext(self) -> [int]:
+        return [int(r[7]) for r in self._data]
+
+    @property
+    def tlen(self) -> [int]:
+        return [int(r[8]) for r in self._data]
+
+    @property
+    def seq(self) -> bytes:
+        return self._data[0][9]
+
+    @property
+    def qual(self) -> bytes:
+        return self._data[0][10]
+
+    @property
+    def optional_fields(self) -> [dict]:
+        annotations = []
+        for record in self._data:
+            flags_ = {}
+            for f in record[11:]:  # are all optional fields
+                k, type_, v = f.split(b':')
+                if type_ == b'i':
+                    flags_[k] = int(v)
+                else:
+                    flags_[k] = v
+            annotations.append(flags_)
+        return annotations
+
+    @property
+    def strands(self) -> [bytes]:
+        return [b'-' if flag & 16 else b'+' for flag in self.flags]
+
+    @property
+    def annotations(self) -> SamAnnotation:
+        return SamAnnotation(self.qname)
+
+    @property
+    def is_mapped(self) -> bool:
+        return False if self.flags[0] & 4 else True
+
+    @property
+    def is_unmapped(self) -> bool:
+        return True if self.flags[0] & 4 else False
+
+    @property
+    def is_multimapped(self) -> bool:
+        return True if len(self._data) > 1 else False
+
+    @property
+    def is_uniquely_mapped(self) -> bool:
+        return True if len(self._data) == 1 else False
+
+    def best_alignment(self):
+        # todo implement; should filter based on AlignScore & CIGAR & TTS distance
+        raise NotImplementedError
+
+    @property
+    def average_quality(self) -> int:
+        """"""
+        return np.mean(np.frombuffer(self.qual, dtype=np.int8, count=len(self)))\
+            .astype(int) - 33
+
+    @property
+    def dust_score(self) -> int:
+        """"""
+        counts = {}
+        for i in range(len(self.seq) - 2):
+            kmer = self.seq[i:i + 3]
+            counts[kmer] = counts.get(kmer, 0) + 1
+
+        # Calculate dust score
+        score = np.sum([i * (i - 1) / 2 for i in counts.values()]) / (len(self.seq) - 3)
+
+        # Scale score (Max score possible is no. of 3mers/2)
+        score = np.int8(score / ((len(self.seq) - 2) / 2) * 100)
+
+        return score
+
+    def to_alignment_row(
+            self, genome_annotation: simpleseq.gtf.Annotation) -> (tuple, [int], [int]):
+
+        anno = self.annotations
+
+        cell = anno.encoded_cell
+        rmt = anno.encoded_rmt
+        poly_t = anno.n_poly_t
+        dust_score = self.dust_score
+        barcode_quality = anno.barcode_quality
+        genomic_quality = self.average_quality
+        max_alignment_score = max(f[b'AS'] for f in self.optional_fields)
+
+        if not self.is_mapped or self.is_multimapped:
+            features, positions = [], []
+        else:
+            features = genome_annotation.translate(self.strands[0], self.rnames[0],
+                                                   self.positions[0])
+            if features:  # todo should be unique
+                positions = self.positions[0]
+            else:
+                positions = []
+
+        row = (cell, rmt, poly_t, dust_score, barcode_quality, genomic_quality,
+               max_alignment_score)
+
+        return row, features, positions
+
+
+class SamReader(simpleseq.reader.Reader):
+    """"""
+
+    def __iter__(self):
+        hook = fileinput.hook_compressed
+        with fileinput.input(self._files, openhook=hook, mode='rb') as f:
+
+            # get rid of header lines
+            file_iterator = iter(f)
+            first_record = next(file_iterator)
+            while first_record.startswith(b'@'):
+                first_record = next(file_iterator)
+                continue
+            yield SamRecord(first_record)
+
+            for record in file_iterator:  # now, run to exhaustion
+                yield SamRecord(record)
+
+    def iter_multialignments(self):
+        """yields lists of all alignments for each fastq record"""
+        sam_iter = iter(self)
+        multialignment = [next(sam_iter)]
+        for record in sam_iter:
+            if record.qname == multialignment[0].qname:  # is this expensive?
+                multialignment.append(record)
+            else:
+                yield multialignment
+                multialignment = [record]
+        yield multialignment
+
+    def iter_chunk(self, size: int=int(1e9)):
+        """
+        Yield chunks of approximately size, guaranteeing that chunks do not disrupt
+        multi-alignments; default size=1GB
+
+        args:
+        -----
+        size: approximate number of bytes per chunk
+        """
+
+        def find_multialignment_boundary(chunk):
+            """find the position that the final complete multialignment terminates at"""
+
+            def final_record_start_index(bytestring):
+                return bytestring.rindex(b'\n') + 1
+
+            incomplete_record_start = final_record_start_index(chunk)
+            last_complete = final_record_start_index(chunk[:incomplete_record_start])
+            record = SamRecord(chunk[last_complete:incomplete_record_start])
+            while True:
+
+                prev_start = final_record_start_index(chunk[:last_complete])
+                compare = SamRecord(chunk[prev_start:last_complete])
+
+                # keep backing up by one record until the name no longer matches.
+                if record.qname != compare.qname:
+                    return last_complete
+                else:
+                    record = compare
+                    last_complete = prev_start
+
+        # function main
+        hook = fileinput.hook_compressed
+        with fileinput.input(self._files, openhook=hook, mode='rb') as f:
+            partial_chunk = b''
+            while True:
+                record_chunk = f.read(size)
+                if not record_chunk:
+                    if partial_chunk:
+                        yield partial_chunk
+                    break
+                index = find_multialignment_boundary(record_chunk)
+                yield partial_chunk + record_chunk[:index]
+                partial_chunk = record_chunk[index:]
+
+    @property
+    def empty(self) -> bool:
+        try:
+            next(iter(self))
+            return False
+        except StopIteration:
+            return True
+
+    def estimate_record_number(self, n_records: int=10000) -> int:
+        """
+        estimate the number of records in the files passed to self
+
+        args:
+        -----
+        n_records: the number of records from which to calculate the mean record size
+
+        returns:
+        --------
+        expected number of records
+        """
+        hook = fileinput.hook_compressed
+        with fileinput.input(self._files, openhook=hook, mode='rb') as f:
+            data = list(islice(f, n_records))
+        mean_record_size = np.mean([len(r) for r in data])
+        return int(self.size / mean_record_size)
 
 
 class STAR:
@@ -388,8 +775,11 @@ class STAR:
         rmtree(directory)
 
 
-def alignment_metadata(log_final_out, meta):
+def get_alignment_metadata(log_final_out, meta=None):
     """store a summary of the alignment run written in log_final_out"""
+
+    if meta is None:
+        meta = {}
 
     with open(log_final_out, 'r') as f:
         lines = f.readlines()
