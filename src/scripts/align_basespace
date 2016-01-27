@@ -3,7 +3,7 @@
 import argparse
 import simpleseq
 import multiprocessing
-from glob import glob
+import os
 
 
 def parse_args():
