@@ -3,7 +3,7 @@
 import argparse
 import simpleseq
 import multiprocessing
-from glob import glob
+import os
 
 
 def parse_args():
@@ -27,8 +27,15 @@ if __name__ == '__main__':
     simpleseq.io.S3.download_files(
             bucket=bucket, key_prefix=key_prefix, output_prefix=args.output_directory,
             cut_dirs=cut_dirs)
-    barcode = glob('{}*R1*'.format(args.output_directory))
-    genomic = glob('{}*R2*'.format(args.output_directory))
+
+    barcode = []
+    genomic = []
+    for file_ in os.listdir(args.output_directory):
+        if 'r1' in file_.lower():
+            barcode.append(file_)
+        if 'r2' in file_.lower():
+            genomic.append(file_)
+
     merge_function = getattr(simpleseq.sequence.merge_functions, args.platform)
     output_file = args.output_directory + 'merged.fastq'
     merged = simpleseq.sequence.fastq.merge_fastq(

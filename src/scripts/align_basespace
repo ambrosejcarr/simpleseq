@@ -24,8 +24,15 @@ if __name__ == '__main__':
     simpleseq.io.BaseSpace.download_sample(
             sample_id=args.basespace_sample, dest_path=args.output_directory,
             access_token=args.access_token)
-    barcode = glob('{}*R1*'.format(args.output_directory))
-    genomic = glob('{}*R2*'.format(args.output_directory))
+
+    barcode = []
+    genomic = []
+    for file_ in os.listdir(args.output_directory):
+        if 'r1' in file_.lower():
+            barcode.append(file_)
+        if 'r2' in file_.lower():
+            genomic.append(file_)
+
     merge_function = getattr(simpleseq.sequence.merge_functions, args.platform)
     if not args.output_directory.endswith('/'):
         args.output_directory += '/'
