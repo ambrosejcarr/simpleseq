@@ -19,7 +19,7 @@ class SamAnnotation:
 
     def __init__(self, name_field):
         fields, *name = name_field.split(b';')
-        self._fields = fields.split(b':') + b';'.join(name)
+        self._fields = fields.split(b':') + [b';'.join(name)]
 
     def __repr__(self) -> str:
         return '<SamAnnotation: {0}>'.format(str(self))
@@ -31,32 +31,40 @@ class SamAnnotation:
         return b':'.join(self._fields)[:-1] + b';' + self._fields[-1]
 
     @property
-    def cell(self) -> bytes:
+    def pool(self) -> bytes:
         return self._fields[0]
 
     @property
-    def rmt(self) -> bytes:
+    def cell(self) -> bytes:
         return self._fields[1]
 
     @property
-    def n_poly_t(self) -> int:
-        return int(self._fields[2])
+    def rmt(self) -> bytes:
+        return self._fields[2]
 
     @property
-    def barcode_quality(self) -> int:
+    def n_poly_t(self) -> int:
         return int(self._fields[3])
+
+    # @property
+    # def barcode_quality(self) -> int:
+    #     return int(self._fields[4])
 
     @property
     def qname(self) -> bytes:
         return self._fields[4]
 
     @property
-    def encoded_cell(self) -> int:
+    def encoded_pool(self) -> int:
         return simpleseq.encodings.DNA3Bit.encode(self._fields[0])
 
     @property
-    def encoded_rmt(self) -> int:
+    def encoded_cell(self) -> int:
         return simpleseq.encodings.DNA3Bit.encode(self._fields[1])
+
+    @property
+    def encoded_rmt(self) -> int:
+        return simpleseq.encodings.DNA3Bit.encode(self._fields[2])
 
     def nearest_TTS(self, annotation):
         raise NotImplementedError  # todo implement
