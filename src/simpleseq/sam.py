@@ -163,11 +163,11 @@ class SamRecord:
 
     @property
     def is_multimapped(self) -> bool:
-        return True if self.optional_fields['NH'] > 1 and self.is_mapped else False
+        return True if self.optional_fields[b'NH'] > 1 and self.is_mapped else False
 
     @property
     def is_uniquely_mapped(self) -> bool:
-        return True if self.optional_fields['NH'] == 1 and self.is_mapped else False
+        return True if self.optional_fields[b'NH'] == 1 and self.is_mapped else False
 
     @property
     def average_quality(self) -> int:
