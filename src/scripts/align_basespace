@@ -21,6 +21,9 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+    if not args.output_directory.endswith('/'):
+        args.output_directory += '/'
+
     simpleseq.io.BaseSpace.download_sample(
             sample_id=args.basespace_sample, dest_path=args.output_directory,
             access_token=args.access_token)
@@ -29,13 +32,11 @@ if __name__ == '__main__':
     genomic = []
     for file_ in os.listdir(args.output_directory):
         if 'r1' in file_.lower():
-            barcode.append(file_)
+            barcode.append(args.output_directory + file_)
         if 'r2' in file_.lower():
-            genomic.append(file_)
+            genomic.append(args.output_directory + file_)
 
     merge_function = getattr(simpleseq.sequence.merge_functions, args.platform)
-    if not args.output_directory.endswith('/'):
-        args.output_directory += '/'
     output_file = args.output_directory + 'merged.fastq'
     merged = simpleseq.sequence.fastq.merge_fastq(
         merge_function=merge_function, fout=output_file, genomic=genomic,
