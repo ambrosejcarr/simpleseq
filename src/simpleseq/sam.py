@@ -229,6 +229,10 @@ class STAR:
     def align(cls, fastq_file, index, n_threads, temp_dir, reverse_fastq_file=None,
               **kwargs):
 
+        # make the directory if it doesn't exist
+        if not os.path.isdir(temp_dir):
+            os.makedirs(temp_dir, exist_ok=True)
+
         # check if file exists; if it does, return the filename
         if os.path.isfile(temp_dir + 'Aligned.out.sam'):
             if os.path.getsize(temp_dir + 'Aligned.out.sam') > 0:
