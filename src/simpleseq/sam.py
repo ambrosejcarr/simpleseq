@@ -10,6 +10,7 @@ import numpy as np
 import simpleseq
 import fileinput
 from itertools import islice
+from collections import Counter, defaultdict
 
 
 class SamAnnotation:
@@ -79,7 +80,7 @@ class SamRecord:
     __slots__ = ['_data']
 
     def __init__(self, record: bytes):
-        self._data = record.split(b'\t')
+        self._data = record.strip(b'\n').split(b'\t')
 
     def __repr__(self) -> str:
         return '<SamRecord: {0}>'.format(str(self))
@@ -304,7 +305,7 @@ class MultiAlignment:
 
     @property
     def is_uniquely_mapped(self) -> bool:
-        return True if len(self._data) == 1 else False
+        return True if len(self._data) == 1 and self.is_mapped else False
 
     def best_alignment(self):
         # todo implement; should filter based on AlignScore & CIGAR & TTS distance
@@ -387,9 +388,9 @@ class SamReader(simpleseq.reader.Reader):
             if record.qname == multialignment[0].qname:  # is this expensive?
                 multialignment.append(record)
             else:
-                yield multialignment
+                yield MultiAlignment(multialignment)
                 multialignment = [record]
-        yield multialignment
+        yield MultiAlignment(multialignment)
 
     def iter_chunk(self, size: int=int(1e9)):
         """
@@ -461,6 +462,47 @@ class SamReader(simpleseq.reader.Reader):
             data = list(islice(f, n_records))
         mean_record_size = np.mean([len(r) for r in data])
         return int(self.size / mean_record_size)
+
+    def pileup(self, alignment_summary=None):
+        """aggregate data from samfile"""
+        unmapped_data = {
+            'cell': Counter(),
+            'rmt': Counter(),
+            'average_quality': Counter(),
+            'pool': Counter(),
+        }
+        mapped_data = {
+            'cell': Counter(),
+            'rmt': Counter(),
+            'average_quality': Counter(),
+            'pool': Counter(),
+            'unique_position': defaultdict(Counter),  # by chromosome
+            'multi_positions': defaultdict(Counter),
+            'TTS_dist': Counter()
+        }
+
+        for ma in self.iter_multialignments():
+            anno = ma.annotations
+            unmapped_data['cell'][anno.encoded_cell] += 1
+            unmapped_data['rmt'][anno.encoded_rmt] += 1
+            unmapped_data['pool'][anno.encoded_pool] += 1
+            unmapped_data['average_quality'][ma.average_quality] += 1
+            mapped_data['cell'][anno.encoded_cell] += 1
+            mapped_data['rmt'][anno.encoded_rmt] += 1
+            mapped_data['pool'][anno.encoded_pool] += 1
+            mapped_data['average_quality'][ma.average_quality] += 1
+
+            # separate unique and multi-positions
+            if ma.is_uniquely_mapped:
+                mapped_data['unique_position'][ma.rnames[0]][ma.positions[0]] += 1
+            else:
+                for i in range(len(ma)):
+                    mapped_data['multi_positions'][ma.rnames[i]][ma.positions[i]] += 1
+
+        if alignment_summary:
+            mapped_data['alignment_summary'] = get_alignment_metadata(alignment_summary)
+
+        return mapped_data, unmapped_data
 
 
 class STAR:
