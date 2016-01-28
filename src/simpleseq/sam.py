@@ -11,6 +11,7 @@ import simpleseq
 import fileinput
 from itertools import islice
 from collections import Counter, defaultdict
+from scipy.sparse import coo_matrix
 
 
 class SamAnnotation:
@@ -463,6 +464,69 @@ class SamReader(simpleseq.reader.Reader):
         mean_record_size = np.mean([len(r) for r in data])
         return int(self.size / mean_record_size)
 
+    def molecule_counts(self, samfile, gtf, alignment_summary):
+
+        cells = set()
+        # read the samfile, get a list of all the cells
+        with open(samfile, 'rb') as f:
+            fiter = iter(f)
+            line = next(fiter)
+            while line.startswith(b'@'):
+                line = next(fiter)
+
+            # get cells
+            cells.add(b''.join(line.split(b'\t')[:2]))
+
+        # assign each cell an id
+        cells = dict(zip(cells, range(len(cells))))
+
+        # read the gtf to get all the genes
+        genes = set()
+        rd = simpleseq.gtf.GTFReader(gtf)
+        for gene in rd.iter_genes():
+            genes.add(gene.gene_name)
+
+        # create an annotation to read all the genes
+        gtf_anno = simpleseq.gtf.Annotation(gtf)
+        gtf_anno.create_interval_tree()
+
+        # assign each gene an id
+        genes = dict(zip(genes, range(len(genes))))
+
+        # get the maximum number of reads/molecules
+        metadata = get_alignment_metadata(alignment_summary)
+        n = metadata['unique_reads']
+
+        # construct the arrays to hold the sparse matrix data
+        row = np.zeros(n, dtype=np.uint32)
+        col = np.zeros(n, dtype=np.uint16)
+        data = np.ones(n, dtype=np.int8)
+        i = 0
+
+        # track all observed molecules
+        observed_molecules = set()
+
+        for record in self:
+            if record.is_uniquely_mapped:
+                sam_anno = record.annotations
+                gene = gtf_anno.translate(record.strand, record.rname, record.pos)
+                if not gene:
+                    continue
+                molecule = (sam_anno.cell, sam_anno.rmt, gene)
+                if molecule in observed_molecules:
+                    continue
+                else:
+                    row[i] = genes[gene]
+                    col[i] = cells[sam_anno.cell]
+                    observed_molecules.add(molecule)
+                    i += 1
+
+        row = row[:i]
+        col = col[:i]
+        data = data[:i]
+
+        return coo_matrix((data, (row, col)), shape=(len(row), len(col)))
+
     def pileup(self, gtf, alignment_summary=None):
         """aggregate data from samfile"""
         unmapped_data = {
@@ -867,3 +931,4 @@ def get_alignment_metadata(log_final_out, meta=None):
         meta['insertion_size'] = float(lines[21].strip().split('\t')[-1])
 
     return meta
+

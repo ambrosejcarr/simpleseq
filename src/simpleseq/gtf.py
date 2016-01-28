@@ -583,9 +583,9 @@ class Annotation:
         try:
             ivs = self._interval_tree[(chromosome, strand)].search(position)
             if len(ivs) == 1:
-                return [first(ivs).data]
+                return first(ivs).data
             else:
-                return []
+                return None
         except KeyError:
             return []
         except TypeError:
@@ -593,14 +593,14 @@ class Annotation:
             try:
                 ivs = self._interval_tree[(chromosome, strand)].search(position)
                 if len(ivs) == 1:
-                    return [first(ivs).data]
+                    return first(ivs).data
                 else:
-                    return []
+                    return None
                 # old version
                 # return [iv.data for iv in
                 #         self._interval_tree[(chromosome, strand)].search(position)]
             except KeyError:
-                return []
+                return None
 
     def create_interval_tree(self, filters: dict=None) -> None:
         """create a tree that maps genomic intervals to their corresponding gene ids
@@ -624,11 +624,11 @@ class Annotation:
         for gene in candidate_genes:
             for iv in gene.intervals():
                 try:
-                    id_ = gene.integer_gene_id
+                    id_ = gene.gene_name
                     data[(gene.seqname, gene.strand)].addi(iv[0], iv[1], id_)
                 except KeyError:
                     data[(gene.seqname, gene.strand)] = IntervalTree()
-                    id_ = gene.integer_gene_id
+                    id_ = gene.gene_name
                     data[(gene.seqname, gene.strand)].addi(iv[0], iv[1], id_)
 
         self._interval_tree = data
