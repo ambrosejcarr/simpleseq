@@ -475,7 +475,9 @@ class SamReader(simpleseq.reader.Reader):
                 line = next(fiter)
 
             # get cells
-            cells.add(b''.join(line.split(b'\t')[:2]))
+            for line in fiter:
+                cell = b''.join(line.split(b':')[:2])
+                cells.add(cell)
 
         # assign each cell an id
         cells = dict(zip(cells, range(len(cells))))
@@ -517,7 +519,7 @@ class SamReader(simpleseq.reader.Reader):
                     continue
                 else:
                     row[i] = genes[gene]
-                    col[i] = cells[sam_anno.cell]
+                    col[i] = cells[sam_anno.pool + sam_anno.cell]
                     observed_molecules.add(molecule)
                     i += 1
 
@@ -525,9 +527,9 @@ class SamReader(simpleseq.reader.Reader):
         mrow = row[:i]
         mcol = col[:i]
         mdata = molecule_data[:i]
-        molecules = coo_matrix((mdata, (mrow, mcol)), shape=(len(mrow), len(mcol)))
+        molecules = coo_matrix((mdata, (mrow, mcol)), shape=(len(genes), len(cells)))
 
-        return molecules
+        return molecules, genes, cells
 
 
 
