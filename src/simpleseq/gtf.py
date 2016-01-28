@@ -325,6 +325,10 @@ class Transcript(Record):
     def size(self) -> int:
         return sum(exon.end - exon.start for exon in self)
 
+    @property
+    def TTS(self) -> int:
+        return self.end
+
 
 class Gene(Record):
 

@@ -463,7 +463,7 @@ class SamReader(simpleseq.reader.Reader):
         mean_record_size = np.mean([len(r) for r in data])
         return int(self.size / mean_record_size)
 
-    def pileup(self, alignment_summary=None):
+    def pileup(self, gtf, alignment_summary=None):
         """aggregate data from samfile"""
         unmapped_data = {
             'cell': Counter(),
@@ -492,6 +492,10 @@ class SamReader(simpleseq.reader.Reader):
             mapped_data['rmt'][anno.rmt] += 1
             mapped_data['pool'][anno.pool] += 1
             mapped_data['average_quality'][aq] += 1
+
+            # todo implement TTS finding + translation into gene space
+            raise NotImplementedError
+
 
             # separate unique and multi-positions
             if ma.is_uniquely_mapped:
