@@ -11,7 +11,7 @@ def parse_args():
                    help='which platform are you merging annotations from?')
     p.add_argument('-g', '--genomic-fastq', nargs='+', metavar='G',
                    help='fastq file(s) containing genomic information')
-    p.add_argument('-b', '--barcode-fastq', nargs='?', metavar='B',
+    p.add_argument('-b', '--barcode-fastq', nargs='*', metavar='B',
                    help='fastq file(s) containing barcode information')
     p.add_argument('-i', '--index', metavar='I', help='genome index folder')
     p.add_argument('-o', '--output-directory', metavar='O',
