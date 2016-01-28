@@ -12,7 +12,10 @@ def main(samfile):
                     fout.write(line)
                 else:
                     header, *line = line.split(b'\t')
-                    header, annotation = header.split(b';')
+                    try:
+                        header, annotation = header.split(b';')
+                    except ValueError:
+                        continue
                     new_line = annotation + b';' + header + b'\t' + b'\t'.join(line)
                     fout.write(new_line)
     os.rename('tempfile.sam', samfile)
