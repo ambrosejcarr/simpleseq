@@ -22,5 +22,6 @@ setup(name='simpleseq',
                'src/scripts/extract_test_fastq',
                'src/scripts/align',
                'src/scripts/align_basespace',
-               'src/scripts/align_s3']
+               'src/scripts/align_s3',
+               'src/scripts/count_molecules']
       )
