@@ -497,10 +497,10 @@ class SamReader(simpleseq.reader.Reader):
         metadata = get_alignment_metadata(alignment_summary)
         n = metadata['unique_reads']
 
-        # construct the arrays to hold the sparse matrix data
+        # construct the arrays to hold the sparse matrix data; assumes < 1 mol / read
         row = np.zeros(n, dtype=np.uint32)
         col = np.zeros(n, dtype=np.uint16)
-        data = np.ones(n, dtype=np.int8)
+        molecule_data = np.ones(n, dtype=np.int8)
         i = 0
 
         # track all observed molecules
@@ -521,11 +521,15 @@ class SamReader(simpleseq.reader.Reader):
                     observed_molecules.add(molecule)
                     i += 1
 
-        row = row[:i]
-        col = col[:i]
-        data = data[:i]
+        # construct molecules
+        mrow = row[:i]
+        mcol = col[:i]
+        mdata = molecule_data[:i]
+        molecules = coo_matrix((mdata, (mrow, mcol)), shape=(len(mrow), len(mcol)))
 
-        return coo_matrix((data, (row, col)), shape=(len(row), len(col)))
+        return molecules
+
+
 
     def pileup(self, gtf, alignment_summary=None):
         """aggregate data from samfile"""
