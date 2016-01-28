@@ -1,0 +1,21 @@
+#!/usr/local/bin/python3
+
+import sys
+import os
+
+
+def main(samfile):
+    with open(samfile, 'rb') as fin:
+        with open('tempfile.sam', 'wb') as fout:
+            for line in fin:
+                if line.startswith(b'@'):
+                    fout.write(line)
+                else:
+                    header, *line = line.split(b'\t')
+                    header, annotation = header.split(b';')
+                    new_line = annotation + b';' + header + b'\t' + b'\t'.join(line)
+                    fout.write(new_line)
+    os.rename('tempfile.sam', samfile)
+
+if __name__ == "__main__":
+    main(sys.argv[1])
