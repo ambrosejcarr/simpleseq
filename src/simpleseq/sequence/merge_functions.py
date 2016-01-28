@@ -24,12 +24,12 @@ def drop_seq(g, b):
 
 
 def mars1_seq(g, b=None):
-    *name_fields, pool, cell, rmt = g.name[:-1].split(b':')
-    g.name = b':'.join(name_fields) + b';' + b':'.join((pool, cell, rmt, b'')) + b'\n'
+    *name_fields, pool, cell, rmt = g.name[1:-1].split(b':')
+    g.name = b'@' + b':'.join((pool, cell, rmt, b'')) + b';' + b':'.join(name_fields) + b'\n'
     return g
 
 
 def mars2_seq(g, b=None):
-    *name_fields, pool, cell, rmt = g.name[:-1].split(b'-')
-    g.name = b'-'.join(name_fields) + b';' + b':'.join((pool, cell, rmt, b'')) + b'\n'
+    *name_fields, pool, cell, rmt = g.name[1:-1].split(b'-')
+    g.name = b'@' + b':'.join((pool, cell, rmt, b'')) + b';' + b':'.join(name_fields) + b'\n'
     return g
