@@ -102,10 +102,11 @@ def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, title='RMT Histogram',
 
     counts = list(rmt_counts.values())
     bin_counts, bin_edges = np.histogram(counts, bins=bins)
+    left = np.arange(len(bin_counts))
 
-    plt.bar(left=bin_edges[:-1], height=bin_counts, width=1)
-    labels = ax.get_xticklabels()
-    plt.setp(labels, rotation=90)
+    ax.bar(left=left, height=bin_counts, width=1)
+    ax.set_xticks(np.arange(len(bin_counts) + 1))
+    ax.set_xticklabels(bin_edges)
     sns.despine(ax=ax)
 
     return fig, ax

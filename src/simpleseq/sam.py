@@ -1036,10 +1036,11 @@ def get_RMT_histogram(samfile, n=int(1e8)):
 
     # create the histogram
     fig, ax = simpleseq.plot.rmt_histogram(rmt_counts)
+    fig.tight_layout()
     fig.savefig(samfile.replace('.sam', '_rmt_dist.png'), dpi=150)
     fig.savefig(samfile.replace('.sam', '_rmt_dist.pdf'))
 
     # print the top 10 counts
-    for k, v in rmt_counts.items():
+    for k, v in rmt_counts.items()[:10]:
         print('{k}: {v}'.format(k=k, v=v))
 
