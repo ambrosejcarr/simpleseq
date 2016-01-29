@@ -86,6 +86,8 @@ class SparseCounts():
             ax.set_xlabel('molecules')
         ax.set_ylabel('cells')
         ax.set_title(title)
+        labels = ax.get_xticklabels()
+        plt.setp(labels, rotation=90)
 
         cellsums = np.ravel(self.coo.tocsr().sum(axis=1))
         plt.hist(cellsums, **kwargs)
