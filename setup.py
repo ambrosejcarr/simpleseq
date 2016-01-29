@@ -24,5 +24,6 @@ setup(name='simpleseq',
                'src/scripts/align_basespace',
                'src/scripts/align_s3',
                'src/scripts/count_molecules',
-               'src/scripts/post_process_mars_seq']
+               'src/scripts/post_process_mars_seq',
+               'src/scripts/rmt_distribution.py']
       )
