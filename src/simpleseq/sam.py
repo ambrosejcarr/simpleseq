@@ -509,7 +509,10 @@ class SamReader(simpleseq.reader.Reader):
         riter = iter(self)
         j = 0
         while i < 1e8:
-            record = next(riter)
+            try:
+                record = next(riter)
+            except StopIteration:
+                break
             if record.is_uniquely_mapped:
                 sam_anno = record.annotations
                 gene = gtf_anno.translate(record.strand, record.rname, record.pos)
