@@ -4,6 +4,7 @@ import os
 import ftplib
 import gzip
 import bz2
+import pickle
 from subprocess import Popen, PIPE, call, check_output, CalledProcessError
 from shutil import rmtree, copyfileobj
 import numpy as np
@@ -1009,4 +1010,35 @@ def get_alignment_metadata(log_final_out, meta=None):
         meta['insertion_size'] = float(lines[21].strip().split('\t')[-1])
 
     return meta
+
+
+def get_RMT_histogram(samfile, n=int(1e8)):
+    with open(samfile, 'rb') as f:
+        fiter = iter(f)
+        record = next(fiter)
+        while record.startswith(b'@'):
+            record = next(fiter)
+
+        rmt_counts = Counter()
+        i = 1
+        while i < n:
+            try:
+                record = next(fiter)
+            except StopIteration:
+                break
+            rmt = record.split(b':')[2]
+            rmt_counts[rmt] += 1
+
+    # save the counts object
+    with open(samfile.replace('.sam', '.p'), 'wb') as f:
+        pickle.dump(rmt_counts, f)
+
+    # create the histogram
+    fig, ax = simpleseq.plot.rmt_histogram(rmt_counts)
+    fig.savefig(samfile.replace('.sam', '.png'), dpi=150)
+    fig.savefig(samfile.replace('.sam', '.pdf'))
+
+    # print the top 10 counts
+    for k, v in rmt_counts.items():
+        print('{k}: {v}'.format(k=k, v=v))
 

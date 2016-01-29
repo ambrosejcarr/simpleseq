@@ -86,9 +86,28 @@ class SparseCounts():
             ax.set_xlabel('molecules')
         ax.set_ylabel('cells')
         ax.set_title(title)
-        labels = ax.get_xticklabels()
-        plt.setp(labels, rotation=90)
-
         cellsums = np.ravel(self.coo.tocsr().sum(axis=1))
         plt.hist(cellsums, log=log, **kwargs)
+        labels = ax.get_xticklabels()
+        plt.setp(labels, rotation=90)
         sns.despine(ax=ax)
+
+
+def rmt_histogram(rmt_counts, fig=None, ax=None, title='', log=True, bins=15, **kwargs):
+    fig, ax = get_fig(fig, ax)
+    if log:
+        ax.set_xlabel('log10(number sequences)')
+    else:
+        ax.set_xlabel('number sequences')
+    ax.set_ylabel('RMTs')
+    ax.set_title(title)
+
+    counts = list(rmt_counts.values())
+    bin_counts, bin_edges = np.histogram(counts, bins=bins)
+
+    plt.bar(left=bin_edges[:-1], height=bin_counts, width=1, log=True)
+    labels = ax.get_xticklabels()
+    plt.setp(labels, rotation=90)
+    sns.despine(ax=ax)
+
+    return fig, ax
