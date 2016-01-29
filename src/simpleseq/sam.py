@@ -464,6 +464,75 @@ class SamReader(simpleseq.reader.Reader):
         mean_record_size = np.mean([len(r) for r in data])
         return int(self.size / mean_record_size)
 
+    def molecule_counts_subset(self, samfile, gtf):
+
+        # read the samfile, get a list of all the cells
+        cells = set()
+        with open(samfile, 'rb') as f:
+            fiter = iter(f)
+            line = next(fiter)
+            while line.startswith(b'@'):
+                line = next(fiter)
+
+            # get cells
+            for line in fiter:
+                cell = b''.join(line.split(b':')[:2])
+                cells.add(cell)
+
+        # assign each cell an id
+        cells = dict(zip(cells, range(len(cells))))
+
+        # read the gtf to get all the genes
+        genes = set()
+        rd = simpleseq.gtf.GTFReader(gtf)
+        for gene in rd.iter_genes():
+            genes.add(gene.gene_name)
+
+        # create an annotation to read all the genes
+        gtf_anno = simpleseq.gtf.Annotation(gtf)
+        gtf_anno.create_interval_tree()
+
+        # assign each gene an id
+        genes = dict(zip(genes, range(len(genes))))
+
+        n = int(1e8 + 1)
+
+        # construct the arrays to hold the sparse matrix data; assumes < 1 mol / read
+        row = np.zeros(n, dtype=np.uint32)
+        col = np.zeros(n, dtype=np.uint16)
+        molecule_data = np.ones(n, dtype=np.int8)
+        i = 0
+
+        # track all observed molecules
+        observed_molecules = set()
+
+        riter = iter(self)
+        j = 0
+        while i < 1e8:
+            record = next(riter)
+            if record.is_uniquely_mapped:
+                sam_anno = record.annotations
+                gene = gtf_anno.translate(record.strand, record.rname, record.pos)
+                if not gene:
+                    continue
+                molecule = (sam_anno.cell, sam_anno.rmt, gene)
+                if molecule in observed_molecules:
+                    continue
+                else:
+                    row[i] = genes[gene]
+                    col[i] = cells[sam_anno.pool + sam_anno.cell]
+                    observed_molecules.add(molecule)
+                    i += 1
+            j += 1
+
+        # construct molecules
+        mrow = row[:i]
+        mcol = col[:i]
+        mdata = molecule_data[:i]
+        molecules = coo_matrix((mdata, (mrow, mcol)), shape=(len(genes), len(cells)))
+
+        return molecules, genes, cells
+
     def molecule_counts(self, samfile, gtf, alignment_summary):
 
         cells = set()

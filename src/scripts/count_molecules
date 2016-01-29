@@ -9,14 +9,14 @@ def parse_args():
     p.add_argument('-s', '--samfile', metavar='S',
                    help='sam file containing reads/molecules to be counted')
     p.add_argument('-g', '--gtf', metavar='G', help='GTF Annotation file')
-    p.add_argument('-a', '--alignment-summary', metavar='A',
-                   help='Alignment Summary from STAR Alignment')
+    # p.add_argument('-a', '--alignment-summary', metavar='A',
+    #                help='Alignment Summary from STAR Alignment')
     p.add_argument('-o', '--output', metavar='O', help='name of output pickled object')
     return p.parse_args()
 
 if __name__ == '__main__':
     args = parse_args()
     rd = simpleseq.sam.SamReader(args.samfile)
-    coo, genes, cells = rd.molecule_counts(args.samfile, args.gtf, args.alignment_summary)
+    coo, genes, cells = rd.molecule_counts_subset(args.samfile, args.gtf)
     with open(args.output, 'wb') as f:
         pickle.dump({'coo': coo, 'genes': genes, 'cells': cells}, f)
