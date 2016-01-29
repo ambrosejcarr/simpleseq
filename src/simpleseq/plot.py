@@ -55,11 +55,8 @@ class SparseCounts():
         cells: dictionary mapping integer row cell ids to cell barcode values
         coo: Coordinate sparse matrix
         """
-        csr = coo.tocsr()
-        csr[csr < 0] = 256
-        coo = csr.tocoo()
-
         self.coo = coo
+        self.coo.data = self.coo.data.astype(np.uint32)
         self.genes = genes
         self.cells = cells
 
