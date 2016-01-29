@@ -1031,13 +1031,13 @@ def get_RMT_histogram(samfile, n=int(1e8)):
             i += 1
 
     # save the counts object
-    with open(samfile.replace('.sam', '.p'), 'wb') as f:
+    with open(samfile.replace('.sam', '_rmt_dist.p'), 'wb') as f:
         pickle.dump(rmt_counts, f)
 
     # create the histogram
     fig, ax = simpleseq.plot.rmt_histogram(rmt_counts)
-    fig.savefig(samfile.replace('.sam', '.png'), dpi=150)
-    fig.savefig(samfile.replace('.sam', '.pdf'))
+    fig.savefig(samfile.replace('.sam', '_rmt_dist.png'), dpi=150)
+    fig.savefig(samfile.replace('.sam', '_rmt_dist.pdf'))
 
     # print the top 10 counts
     for k, v in rmt_counts.items():
