@@ -1028,6 +1028,7 @@ def get_RMT_histogram(samfile, n=int(1e8)):
                 break
             rmt = record.split(b':')[2]
             rmt_counts[rmt] += 1
+            i += 1
 
     # save the counts object
     with open(samfile.replace('.sam', '.p'), 'wb') as f:
