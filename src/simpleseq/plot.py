@@ -62,7 +62,7 @@ class SparseCounts():
     @classmethod
     def from_pickle(cls, filename):
         with open(filename, 'rb') as f:
-            cls(**pickle.load(f))
+            return cls(**pickle.load(f))
 
     def to_pickle(self, filename):
         with open(filename, 'wb') as f:
