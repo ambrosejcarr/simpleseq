@@ -55,9 +55,14 @@ class SparseCounts():
         cells: dictionary mapping integer row cell ids to cell barcode values
         coo: Coordinate sparse matrix
         """
+        csr = coo.tocsr()
+        csr[csr < 0] = 256
+        coo = csr.tocoo()
+
         self.coo = coo
         self.genes = genes
         self.cells = cells
+
 
     @classmethod
     def from_pickle(cls, filename):
