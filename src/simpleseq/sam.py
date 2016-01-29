@@ -500,7 +500,7 @@ class SamReader(simpleseq.reader.Reader):
         # construct the arrays to hold the sparse matrix data; assumes < 1 mol / read
         row = np.zeros(n, dtype=np.uint32)
         col = np.zeros(n, dtype=np.uint16)
-        molecule_data = np.ones(n, dtype=np.int8)
+        molecule_data = np.ones(n, dtype=np.uint16)
         i = 0
 
         # track all observed molecules
@@ -571,7 +571,7 @@ class SamReader(simpleseq.reader.Reader):
         # construct the arrays to hold the sparse matrix data; assumes < 1 mol / read
         row = np.zeros(n, dtype=np.uint32)
         col = np.zeros(n, dtype=np.uint16)
-        molecule_data = np.ones(n, dtype=np.int8)
+        molecule_data = np.ones(n, dtype=np.uint8)
         i = 0
 
         # track all observed molecules
