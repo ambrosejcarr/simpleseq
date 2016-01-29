@@ -100,6 +100,11 @@ def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, title='RMT Histogram',
     ax.set_ylabel('RMTs')
     ax.set_title(title)
 
+    # delete outliers // failed keys
+    keylen = len(next(iter(rmt_counts.keys())))
+    del rmt_counts[b'T' * keylen]
+    del rmt_counts[b'A' * keylen]
+
     counts = list(rmt_counts.values())
     bin_counts, bin_edges = np.histogram(counts, bins=bins)
     left = np.arange(len(bin_counts))
@@ -107,6 +112,8 @@ def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, title='RMT Histogram',
     ax.bar(left=left, height=bin_counts, width=1)
     ax.set_xticks(np.arange(len(bin_counts) + 1))
     ax.set_xticklabels(bin_edges)
+    labels = ax.get_xticklabels()
+    plt.setp(labels, rotation=90)
     sns.despine(ax=ax)
 
     return fig, ax
