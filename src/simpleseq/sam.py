@@ -1012,7 +1012,7 @@ def get_alignment_metadata(log_final_out, meta=None):
     return meta
 
 
-def get_RMT_histogram(samfile, n=int(1e8)):
+def get_RMT_histogram(samfile, n=int(5e7)):
     with open(samfile, 'rb') as f:
         fiter = iter(f)
         record = next(fiter)
@@ -1026,7 +1026,15 @@ def get_RMT_histogram(samfile, n=int(1e8)):
                 record = next(fiter)
             except StopIteration:
                 break
-            rmt = record.split(b':')[2]
+            name, flag, *record = record.split(b'\t')
+
+            # only look at uniquely aligned reads
+            if int(flag) & 4:
+                continue
+            if record[-4][-1] != b'1':
+                continue
+
+            rmt = name.split(b':')[2]
             rmt_counts[rmt] += 1
             i += 1
 

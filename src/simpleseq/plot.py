@@ -93,11 +93,15 @@ class SparseCounts():
         sns.despine(ax=ax)
 
 
-def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, title='RMT Histogram',
+def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, log=True, title='RMT Histogram',
                   **kwargs):
     fig, ax = get_fig(fig, ax)
-    ax.set_xlabel('number sequences')
+    if log:
+        ax.set_xlabel('log(number sequences)')
+    else:
+        ax.set_xlabel('number sequences')
     ax.set_ylabel('RMTs')
+
     ax.set_title(title)
 
     # delete outliers // failed keys
