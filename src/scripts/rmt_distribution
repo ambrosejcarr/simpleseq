@@ -7,7 +7,7 @@ from sys import argv
 import simpleseq
 
 
-def main(samfile, num_reads=int(5e5)):
+def main(samfile, num_reads=int(5e7)):
     simpleseq.sam.get_RMT_histogram(samfile, num_reads)
 
 

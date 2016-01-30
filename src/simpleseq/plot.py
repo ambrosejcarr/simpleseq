@@ -96,11 +96,12 @@ class SparseCounts():
 def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, log=True, title='RMT Histogram',
                   **kwargs):
     fig, ax = get_fig(fig, ax)
+
+    ax.set_xlabel('number sequences')
     if log:
-        ax.set_xlabel('log(number sequences)')
+        ax.set_ylabel('log(RMTs)')
     else:
-        ax.set_xlabel('number sequences')
-    ax.set_ylabel('RMTs')
+        ax.set_ylabel('RMTs')
 
     ax.set_title(title)
 
@@ -112,6 +113,8 @@ def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, log=True, title='RMT H
     counts = list(rmt_counts.values())
     bin_counts, bin_edges = np.histogram(counts, bins=bins)
     left = np.arange(len(bin_counts))
+    if log:
+        bin_counts = np.log(bin_counts)
 
     ax.bar(left=left, height=bin_counts, width=1)
     ax.set_xticks(np.arange(len(bin_counts) + 1))
