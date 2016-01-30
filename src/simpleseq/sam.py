@@ -1012,7 +1012,7 @@ def get_alignment_metadata(log_final_out, meta=None):
     return meta
 
 
-def get_RMT_histogram(samfile, n=int(5e5)):
+def get_RMT_histogram(samfile, n=int(5e7)):
     with open(samfile, 'rb') as f:
         fiter = iter(f)
         record = next(fiter)
@@ -1046,6 +1046,4 @@ def get_RMT_histogram(samfile, n=int(5e5)):
     fig.savefig(samfile.replace('.sam', '_rmt_dist.pdf'))
 
     # print the top 10 counts
-    for k, v in rmt_counts.items()[:10]:
-        print('{k}: {v}'.format(k=k, v=v))
 
