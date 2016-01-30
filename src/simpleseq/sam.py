@@ -1012,7 +1012,7 @@ def get_alignment_metadata(log_final_out, meta=None):
     return meta
 
 
-def get_RMT_histogram(samfile, n=int(1e8)):
+def get_RMT_histogram(samfile, n=int(5e7)):
     with open(samfile, 'rb') as f:
         fiter = iter(f)
         record = next(fiter)
@@ -1026,20 +1026,24 @@ def get_RMT_histogram(samfile, n=int(1e8)):
                 record = next(fiter)
             except StopIteration:
                 break
-            rmt = record.split(b':')[2]
+            name, flag, *record = record.split(b'\t')
+
+            # only look at aligned reads
+            if int(flag) & 4:
+                continue
+            rmt = name.split(b':')[2]
             rmt_counts[rmt] += 1
             i += 1
 
     # save the counts object
-    with open(samfile.replace('.sam', '.p'), 'wb') as f:
+    with open(samfile.replace('.sam', '_rmt_dist.p'), 'wb') as f:
         pickle.dump(rmt_counts, f)
 
     # create the histogram
     fig, ax = simpleseq.plot.rmt_histogram(rmt_counts)
-    fig.savefig(samfile.replace('.sam', '.png'), dpi=150)
-    fig.savefig(samfile.replace('.sam', '.pdf'))
+    fig.tight_layout()
+    fig.savefig(samfile.replace('.sam', '_rmt_dist.png'), dpi=150)
+    fig.savefig(samfile.replace('.sam', '_rmt_dist.pdf'))
 
     # print the top 10 counts
-    for k, v in rmt_counts.items():
-        print('{k}: {v}'.format(k=k, v=v))
 
