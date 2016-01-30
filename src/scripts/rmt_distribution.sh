@@ -36,7 +36,7 @@ if hash rmt_distribution 2>/dev/null; then
     :
 else
     echo "installing simpleseq"
-    pip3 uninstall simpleseq
+    pip3 uninstall -y simpleseq
     git clone -q https://github.com/ambrosejcarr/simpleseq.git simpleseq/
     cd simpleseq
     pip3 install -e ./
