@@ -154,3 +154,13 @@ def merge_fastq(merge_function, fout, genomic, barcode=None):
                 f.write(bytes(r))
 
     return fout
+
+
+def truncate_read_length(fastq_files, length):
+    for f in fastq_files:
+        rd = FastqReader(f)
+        with open(f.replace('.fastq', '_truncated_{}.fastq'.format(length)), 'wb') as o:
+            for record in rd:
+                record.sequence = record.sequence[:length] + b'\n'
+                record.quality = record.quality[:length] + b'\n'
+                o.write(bytes(record))

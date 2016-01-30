@@ -1046,4 +1046,3 @@ def get_RMT_histogram(samfile, n=int(5e7)):
     fig.savefig(samfile.replace('.sam', '_rmt_dist.pdf'))
 
     # print the top 10 counts
-

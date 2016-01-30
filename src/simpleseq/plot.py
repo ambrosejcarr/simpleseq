@@ -1,12 +1,15 @@
+
 import pickle
 import scipy.sparse
 import numpy as np
+import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import seaborn as sns
+import simpleseq
 
 # set a bunch of defaults
 sns.set_style('ticks')
@@ -92,6 +95,10 @@ class SparseCounts():
         plt.setp(labels, rotation=90)
         sns.despine(ax=ax)
 
+    def yield_curve(self, cell_thresholds, count_vector):
+        """plot yield (cells above threshold) for various numbers of total counts."""
+        raise NotImplementedError  # do this after looking at the alignment summaries
+
 
 def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, log=True, title='RMT Histogram',
                   **kwargs):
@@ -124,3 +131,44 @@ def rmt_histogram(rmt_counts, fig=None, ax=None, bins=15, log=True, title='RMT H
     sns.despine(ax=ax)
 
     return fig, ax
+
+
+def comparative_alignment(alignment_summaries):
+    """plot various comparisons of alignment results"""
+    plt.figure(figsize=(8, 5))
+    alndata = []
+    for summary in alignment_summaries:
+        alndata.append(simpleseq.sam.get_alignment_metadata(summary))
+
+    # below is specific for nested plots
+    names = [a.split('/')[0] for a in alignment_summaries]
+
+    # uniq_rate mmap_rate unmapped_rate
+    unique = np.array([s['uniq_rate'] for s in alndata])
+    multim = np.array([s['mmap_rate'] for s in alndata])
+    unmapped = np.array([s['unmapped_rate'] for s in alndata])
+
+    i = np.argsort(unique)
+    i = i[::-1]  # reverse the sort
+    left = np.arange(len(unique))
+
+    plt.barh(left, unique[i], 1, color='seagreen', label='unique')
+    plt.barh(left, multim[i], 1, unique[i], color='royalblue', label='multi')
+    plt.barh(left, np.array([100] * len(left)) - (unique[i] + multim[i]),
+             1, unique[i] + multim[i],
+             color='indianred', label='unmapped')
+    plt.yticks(left + 0.5, names, fontsize=10)
+    plt.xlabel('percentage')
+    plt.title('comparative alignment summary')
+    plt.ylim((0, len(left)))
+    plt.legend(frameon=True)
+
+    sns.despine()
+    plt.tight_layout()
+
+def unique_alignment_by_date_colored_by_type(alignment_summaries, metadata):
+    """scatterplot of unique alignment rate vs. date published, colored by type"""
+    pd.DataFrame.from_csv(metadata)
+
+
+
