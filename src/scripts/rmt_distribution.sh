@@ -39,6 +39,7 @@ else
     pip3 uninstall -y simpleseq
     git clone -q https://github.com/ambrosejcarr/simpleseq.git simpleseq/
     cd simpleseq
+    git pull  # make sure up-to-date
     pip3 install -e ./
     cd ../
 fi
