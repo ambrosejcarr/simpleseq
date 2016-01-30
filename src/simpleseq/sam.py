@@ -1028,12 +1028,9 @@ def get_RMT_histogram(samfile, n=int(5e5)):
                 break
             name, flag, *record = record.split(b'\t')
 
-            # only look at uniquely aligned reads
+            # only look at aligned reads
             if int(flag) & 4:
                 continue
-            if record[-4][-1] != b'1':
-                continue
-
             rmt = name.split(b':')[2]
             rmt_counts[rmt] += 1
             i += 1
