@@ -604,8 +604,6 @@ class SamReader(simpleseq.reader.Reader):
 
         return molecules, genes, cells
 
-
-
     def pileup(self, gtf, alignment_summary=None):
         """aggregate data from samfile"""
         unmapped_data = {
