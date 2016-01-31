@@ -127,35 +127,91 @@ def compare_yield_sam(samfiles):
     raise NotImplementedError
 
 
-def compare_rmt_distributions(rmt_frequencies):
-    raise NotImplementedError
+class CompareRMTDistributions:
+
+    def __init__(self, rmt_frequencies):
+        self.rmt_frequencies = rmt_frequencies
+
+    @classmethod
+    def from_files(cls, files):
+        with open(files[0], 'rb') as f:
+            data = pickle.load(f)
+            seed = pd.DataFrame({files[0].replace('.p', ''): list(data.values())})
+
+        for file_ in files[1:]:
+            with open(file_, 'rb') as f:
+                data = pickle.load(f)
+                right = pd.DataFrame({file_.replace('.p', ''): list(data.values())})
+                seed = pd.merge(seed, right, right_index=True, left_index=True,
+                                how='outer')
+
+        return cls(seed)
+
+    def boxplot(self):
+        data = np.log(self.rmt_frequencies + 1)
+        data[np.isinf(data)] = np.nan
+        data[data < 0] = 0
+        data = data.drop([0], axis=0)
+        f = plt.figure(figsize=(10, 6))
+        ax = sns.boxplot(data=data)
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks_position('bottom')
+        ax.set_ylabel('log(rmt count)')
+        plt.title('Box Plot: RMT observations')
+        plt.setp(ax.get_xticklabels(), rotation=90)
+        plt.setp(ax.get_xticklabels(), fontsize=10)
+        plt.tight_layout()
+        return f, ax
 
 
-class compare_cell_distributions():
 
-    def __init__(self, count_matrices):
 
+
+
+
+class CompareCellDistribution():
+
+    def __init__(self, cellsums, count_matrices=None):
         self.count_matrices = count_matrices
+        self.cellsums = cellsums
+
+    @classmethod
+    def from_count_matrices(cls, count_matrices):
+        cls.count_matrices = count_matrices
 
         with open(count_matrices[0], 'rb') as f:
             data = pickle.load(f)
-            columns = [count_matrices.replace('.p', '')]
+            columns = [count_matrices[0].replace('.p', '')]
             seed = pd.DataFrame(np.ravel(data['coo'].tocsr().sum(axis=1)),
                                      columns=columns)
 
         for c in count_matrices[1:]:
             with open(c, 'rb') as f:
                 data = pickle.load(f)
-                columns = [count_matrices.replace('.p', '')]
+                columns = [c.replace('.p', '')]
                 right = pd.DataFrame(np.ravel(data['coo'].tocsr().sum(axis=1)),
-                                         columns=columns)
+                                     columns=columns)
                 seed = pd.merge(seed, right, left_index=True, right_index=True,
                                 how='outer')
 
-        self.cellsums = seed
+        cls.cellsums = seed
 
+    # note that to group the data by type requires knowledge of column names, and is
+    # omitted here. preprocess self.cellsums to accomplish this.
     def boxplot(self):
-        raise NotImplementedError
+        data = np.log(self.cellsums + 1)
+        data[np.isinf(data)] = np.nan
+        data[data < 0] = 0
+        f = plt.figure(figsize=(10, 6))
+        ax = sns.boxplot(data=data)
+        ax.yaxis.set_ticks_position('left')
+        ax.xaxis.set_ticks_position('bottom')
+        ax.set_ylabel('log(cell count)')
+        plt.title('Box Plot: Cell Sizes')
+        plt.setp(ax.get_xticklabels(), rotation=90)
+        plt.setp(ax.get_xticklabels(), fontsize=10)
+        plt.tight_layout()
+        return f, ax
 
     def to_pickle(self, filename):
         with open(filename, 'wb') as f:

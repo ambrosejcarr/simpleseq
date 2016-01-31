@@ -1043,4 +1043,38 @@ def get_RMT_histogram(samfile, n=int(5e7)):
     fig.savefig(samfile.replace('.sam', '_rmt_dist.png'), dpi=150)
     fig.savefig(samfile.replace('.sam', '_rmt_dist.pdf'))
 
-    # print the top 10 counts
+
+def get_mars_RMT_histogram(samfile, n=int(5e7)):
+    with open(samfile, 'rb') as f:
+        fiter = iter(f)
+        record = next(fiter)
+        while record.startswith(b'@'):
+            record = next(fiter)
+
+        rmt_counts = Counter()
+        i = 1
+        while i < n:
+            try:
+                record = next(fiter)
+            except StopIteration:
+                break
+            name, flag, *record = record.split(b'\t')
+
+            # only look at aligned reads
+            if int(flag) & 4:
+                continue
+            rmt = name.split(b':')[-2]
+            rmt_counts[rmt] += 1
+            i += 1
+
+    # save the counts object
+    with open(samfile.replace('.sam', '_rmt_dist.p'), 'wb') as f:
+        pickle.dump(rmt_counts, f)
+
+    # create the histogram
+    fig, ax = simpleseq.plot.rmt_histogram(rmt_counts)
+    fig.tight_layout()
+    fig.savefig(samfile.replace('.sam', '_rmt_dist.png'), dpi=150)
+    fig.savefig(samfile.replace('.sam', '_rmt_dist.pdf'))
+
+

@@ -1,0 +1,15 @@
+#!/usr/local/bin/python3
+
+import matplotlib
+matplotlib.use('Agg')
+
+from sys import argv
+import simpleseq
+
+
+def main(samfile, num_reads=int(5e7)):
+    simpleseq.sam.get_mars_RMT_histogram(samfile, num_reads)
+
+
+if __name__ == "__main__":
+    main(*argv[1:])
