@@ -707,6 +707,7 @@ class Annotation:
     def TTS_distances(self, samfile):
         """return a list of distances from the nearest TTS"""
         distances = []
+        unmapped = 0
         rd = simpleseq.sam.SamReader(samfile)
         for record in rd.iter_multialignments():
             if record.is_uniquely_mapped:
@@ -714,7 +715,9 @@ class Annotation:
                     record.strands[0], record.rnames[0], record.positions[0])
                 if gene:
                     distances.append(self[gene].distance_from_TTS(record.positions[0]))
-        return distances
+            else:
+                unmapped += 1
+        return distances, unmapped
 
 
 class GTFReader(simpleseq.reader.Reader):
