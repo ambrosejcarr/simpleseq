@@ -332,7 +332,7 @@ class Transcript(Record):
         else:
             return self.start
 
-    def distance_from_tts(self, position):
+    def distance_from_TTS(self, position):
         """
         Returns the distance of position to the spliced transcript TTS. If the position
          is after the nearest TTS, the distance returned is negative
