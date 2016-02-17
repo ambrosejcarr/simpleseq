@@ -347,7 +347,6 @@ class Transcript(Record):
 
         # exons are first to last in either orientation, but +/- matters
 
-
         distance = 0
         if self.strand == b'+':
             if position > self.TTS:
@@ -357,7 +356,7 @@ class Transcript(Record):
                     distance += exon.end - exon.start
                 else:
                     distance += exon.end - position
-                    break
+                    return distance
         else:
             if position < self.TTS:
                 return position - self.TTS
@@ -366,7 +365,7 @@ class Transcript(Record):
                     distance += exon.end - exon.start
                 else:
                     distance += position - exon.start
-                    break
+                    return distance
         return distance
 
 
@@ -509,7 +508,7 @@ class Gene(Record):
         negative = []
         for tx in self.transcripts:
             dist = tx.distance_from_TTS(position)
-            if dist < 0:
+            if dist > 0:
                 positive.append(dist)
             else:
                 negative.append(dist)
