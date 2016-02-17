@@ -536,7 +536,7 @@ class Annotation:
             if len(gene_records) < 3:
                 continue  # not a valid transcript; 3 records needed: gene, tx, exon.
             g = Gene.from_records(*gene_records)
-            self._genes[g.integer_gene_id] = g
+            self._genes[g.gene_name] = g
 
         # create fasta object
         if fasta:
