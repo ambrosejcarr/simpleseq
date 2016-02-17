@@ -327,7 +327,47 @@ class Transcript(Record):
 
     @property
     def TTS(self) -> int:
-        return self.end
+        if self.strand == b'+':
+            return self.end
+        else:
+            return self.start
+
+    def distance_from_tts(self, position):
+        """
+        Returns the distance of position to the spliced transcript TTS. If the position
+         is after the nearest TTS, the distance returned is negative
+
+        args:
+        -----
+        position: genomic position
+
+        returns:
+        distance (int)
+        """
+
+        # exons are first to last in either orientation, but +/- matters
+
+
+        distance = 0
+        if self.strand == b'+':
+            if position > self.TTS:
+                return self.TTS - position
+            for exon in self.exons[::-1]:
+                if position < exon.start:
+                    distance += exon.end - exon.start
+                else:
+                    distance += exon.end - position
+                    break
+        else:
+            if position < self.TTS:
+                return position - self.TTS
+            for exon in self.exons[::-1]:
+                if position > exon.end:
+                    distance += exon.end - exon.start
+                else:
+                    distance += position - exon.start
+                    break
+        return distance
 
 
 class Gene(Record):
@@ -452,6 +492,32 @@ class Gene(Record):
 
         return tuple(self._merge_intervals(ivs))
 
+    def distance_from_TTS(self, position):
+        """
+        return the minimum distance from the TTS of the closest transcript for which the
+         distance is positive; biases towards short TTS distances
+
+        args:
+        -----
+        position: position of a genomic alignment
+
+        returns:
+        --------
+        distance (int)
+        """
+        positive = []
+        negative = []
+        for tx in self.transcripts:
+            dist = tx.distance_from_TTS(position)
+            if dist < 0:
+                positive.append(dist)
+            else:
+                negative.append(dist)
+        if positive:
+            return min(positive)
+        else:
+            return max(negative)
+
 
 class Annotation:
 
@@ -474,7 +540,7 @@ class Annotation:
 
         # create fasta object
         if fasta:
-            self._fasta = simpleseq.sequence.fasta.Fasta.from_file(fasta)
+            self._fasta = simpleseq.sequence.fasta.Genome.from_file(fasta)
 
         # create empty interval tree
         self._interval_tree = None
@@ -637,6 +703,18 @@ class Annotation:
         """reduce the size of the annotation, slicing the genes; makes changes in-place"""
         for id_, gene in self.items():
             self._genes[id_] = gene[start:stop]
+
+    def TTS_distances(self, samfile):
+        """return a list of distances from the nearest TTS"""
+        distances = []
+        rd = simpleseq.sam.SamReader(samfile)
+        for record in rd.iter_multialignments():
+            if record.is_uniquely_mapped:
+                gene = self.translate(
+                    record.strands[0], record.rnames[0], record.positions[0])
+                if gene:
+                    distances.append(self[gene].distance_from_TTS(record.positions[0]))
+        return distances
 
 
 class GTFReader(simpleseq.reader.Reader):

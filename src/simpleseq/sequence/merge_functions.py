@@ -19,7 +19,8 @@ def in_drop(g, b):
 def drop_seq(g, b):
     cell = b.sequence[:12]
     rmt = b.sequence[12:20]
-    g.add_annotation((b'', cell, rmt, b''))
+    poly_t = b.sequence[20:]
+    g.add_annotation((b'', cell, rmt, poly_t))
     return g
 
 
